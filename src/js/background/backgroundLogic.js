@@ -1,4 +1,38 @@
 const DEFAULT_TAB = "about:newtab";
+
+
+const port = browser.runtime.connectNative("mozillavpn");
+port.onMessage.addListener( response => {
+  if (port.error) {
+    browser.storage.local.set({ "mozillaVpnInstalled": false });
+  }
+  if (response.servers) {
+    browser.storage.local.set({ "mozillaVpnServers": response.servers.countries });
+  }
+});
+
+// Do VPN things
+(async () => {
+  const { mozVpnCurrentServerInfo } = await browser.storage.local.get("mozVpnCurrentServerInfo");
+  if (!mozVpnCurrentServerInfo) {
+    browser.storage.local.set({ "mozVpnCurrentServerInfo": {
+      "countryCode": "DE",
+      "cityName": "Dusseldorf",
+    }});
+  }
+
+  const { authenticatedMozVpnUser } = await browser.storage.local.get("authenticatedMozVpnUser");
+  if (!authenticatedMozVpnUser) {
+    // TODO for real
+    browser.storage.local.set({ "authenticatedMozVpnUser": true });
+  }
+  const { hideMozillaVpnUI } = await browser.storage.local.get("hideMozillaVpnUI");
+  if (!hideMozillaVpnUI) {
+    browser.storage.local.set({ "hideMozillaVpnUI": false });
+  }
+  browser.storage.local.set({ "mozillaVpnInstalled": !port.error });
+})();
+
 const backgroundLogic = {
   NEW_TAB_PAGES: new Set([
     "about:startpage",
@@ -26,6 +60,10 @@ const backgroundLogic = {
     const response = await fetch(manifestPath);
     const extensionInfo = await response.json();
     return extensionInfo;
+  },
+
+  getMozillaVpnServers() {
+    port.postMessage({t: 'servers'});
   },
 
   getUserContextIdFromCookieStoreId(cookieStoreId) {

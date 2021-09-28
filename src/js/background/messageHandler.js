@@ -91,6 +91,9 @@ const messageHandler = {
           true
         );
         break;
+      case "getMozillaVpnServers":
+        response = await backgroundLogic.getMozillaVpnServers();
+        break;
       case "assignAndReloadInContainer":
         tab = await assignManager.reloadPageInContainer(
           m.url, 

@@ -266,5 +266,29 @@
         "content": "$1"
       }
     }
+  },
+  "chooseLocation": {
+    "message": "Choose location"
+  },
+  "hide": {
+    "message": "Hide"
+  },
+  "show": {
+    "message": "Show"
+  },
+  "protectThisContainer": {
+    "message": "Protect each container with Mozilla VPN"
+  },
+  "advancedProxySettings": {
+    "message": "Advanced proxy settings"
+  },
+  "proxyInputLabel": {
+    "message": "Enter custom proxy"
+  },
+  "applyToThisContainerButton": {
+    "message": "Apply to this container"
+  },
+  "clearProxy": {
+    "message": "Clear proxy"
   }
 }

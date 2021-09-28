@@ -176,7 +176,9 @@
           </td>
         </tr>
       </table>
+
     </div>
+    <v-padding-hack-48></v-padding-hack-48> <!--presents last container from getting covered up by the 'manage containers button' when list is long-->
     <div class="bottom-btn keyboard-nav hover-highlight" id="manage-containers-link" tabindex="0" data-i18n-message-id="manageContainers"></div>
   </div>
 
@@ -229,9 +231,10 @@
             <span class="menu-text truncate-text">www.mozillllllllllllllllllllllllllllllllllllla.org</span>
             <img class="trash-button" src="/img/container-close-tab.svg" />
           </td>
-        </tr>       
+        </tr>
       </table>
     </div>
+    <v-padding-hack-48></v-padding-hack-48>
     <div class="bottom-btn keyboard-nav hover-highlight" id="manage-container-link" tabindex="0" data-i18n-message-id="manageThisContainer"></div>
   </div>
 
@@ -269,10 +272,12 @@
         <input type="hidden" name="container-id" id="edit-container-panel-usercontext-input" />
         <fieldset>
           <legend class="form-header" data-i18n-message-id="name"></legend>
+          <v-padding-hack-4></v-padding-hack-4>
           <input type="text" name="container-name" id="edit-container-panel-name-input" class="edit-container-panel-name-input" maxlength="25"/>
         </fieldset>
         <fieldset id="edit-container-panel-choose-color" class="radio-choice">
           <legend class="form-header" data-i18n-message-id="color"></legend>
+          <v-padding-hack-4></v-padding-hack-4>
         </fieldset>
         <fieldset id="edit-container-panel-choose-icon" class="radio-choice">
           <legend class="form-header" data-i18n-message-id="icon"></legend>
@@ -284,17 +289,41 @@
           <input type="checkbox" class="site-isolation" id="site-isolation" name="site-isolation">
           <label for="site-isolation" class="options-label" data-i18n-message-id="limitToDesignatedSites"></label>
         </div>
-        <div class="container-options options-label manage-assigned-sites-list" id="manage-assigned-sites-list" tabindex="0">
-        </div>
+        <button class="container-options blue-link" id="manage-assigned-sites-list" tabindex="0" data-i18n-message-id="manageSiteList"></button>
       </div>
     </div>
-    <div class="delete-container">
-      <button class="delete-btn" id="delete-container-button" data-i18n-message-id="deleteThisContainer"></button>
-    </div>
+    <moz-vpn-container-ui class="moz-vpn-controller-content expanded">
+      <div class="flx-row flx-space-between button-wrapper">
+        <h4 class="moz-vpn-logotype">Mozilla VPN</h4>
+
+          <button class="expand-collapse blue-link" tab-index="0">
+            <span data-i18n-message-id="hide"  class="hide-label hide-show-label"></span>
+            <span data-i18n-message-id="show" class="show-label hide-show-label"></span>
+          </button>
+
+          <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+          </label>
+      </div>
+      <div class="collapsible-content flx-col controller-collapsible-content">
+        <span class="moz-vpn-subtitle"></span>
+          <button id="get-mozilla-vpn" class="mozilla-vpn-cta primary-cta">Get Mozilla VPN</button>
+
+          <button id="moz-vpn-current-server" class="controller">
+            <span class="current-country-flag"></span>
+            <span class="current-city-name"></span>
+          </button>
+        <v-padding-hack-16></v-padding-hack-16>
+      </div>
+    </moz-vpn-container-ui>
+    <button class="proxy-section advanced-proxy-settings-btn controller" data-i18n-message-id="advancedProxySettings"></button>
+    <button class="delete-container delete-btn alert-text" id="delete-container-button" data-i18n-message-id="deleteThisContainer"></button>
     <div class="panel-footer">
       <a href="#" class="button expanded secondary footer-button cancel-button" id="create-container-cancel-link" data-i18n-message-id="cancel"></a>
       <a href="#" class="button expanded primary footer-button" id="create-container-ok-link" data-i18n-message-id="ok"></a>
     </div>
+
   </div>
 
   <div class="panel menu-panel edit-container-assignments hide" id="edit-container-assignments">
@@ -328,6 +357,44 @@
     <div class="panel-footer">
       <a href="#" class="button expanded secondary footer-button cancel-button" data-i18n-message-id="cancel" id="delete-container-cancel-link"></a>
       <a href="#" class="button expanded primary footer-button" data-i18n-message-id="ok" id="delete-container-ok-link"></a>
+    </div>
+  </div>
+
+  <div class="hide panel mozilla-vpn-server-list-panel" id="mozilla-vpn-server-list-panel">
+    <h3 class="title proxy-panel-title" id="vpn-server-list-title" data-i18n-message-id="chooseLocation"></h3>
+    <button class="btn-return arrow-left moz-vpn-return" id="moz-vpn-return"></button>
+    <ul id="mozilla-vpn-server-list" class="mozilla-vpn-server-list">
+      <template id="server-list-item">
+        <li class="server-list-item" data-country-code="">
+          <button class="flx-row server-city-list-visibility-btn controller">
+            <div class="toggle"></div>
+            <img class="server-country-flag" src="" alt="" />
+            <p class="server-country-name"></p>
+          </button>
+          <ul class="server-city-list"></ul>
+        </li>
+      </template>
+      <template id="server-city-list-items">
+        <li>
+          <label class="server-city-list-item">
+            <input class="server-radio-btn"  type="radio" data-country-code="" data-city-name="" checked=""/>
+            <div class="server-radio-control"></div>
+            <span class="server-city-name"></span>
+          </label>
+        </li>
+      </template>
+    </ul>
+  </div>
+
+  <div class="hide panel advanced-proxy-settings-panel" id="advanced-proxy-settings-panel">
+    <h3 class="title proxy-panel-title" id="advanced-proxy-settings-title" data-i18n-message-id="advancedProxySettings"></h3>
+    <button class="btn-return arrow-left moz-vpn-return" id="advanced-proxy-settings-return"></button>
+    <div class="advanced-proxy-panel-content">
+      <label for="proxy-host" data-i18n-message-id="customProxyLabel"></label>
+      <input id="proxy-host" class="proxy-host primary-input" name="proxy-host" type="url" required pattern="socks://" />
+      <span class="proxy-validity"></span>
+      <input id="proxy-host-submit" class="primary-cta" type="submit" data-i18n-attribute-message-id="clearProxy" data-i18n-attribute="text"/>
+      <button id="clear-proxy-host" class="alert-text" data-i18n-message-id="clearProxy"></button>
     </div>
   </div>
 

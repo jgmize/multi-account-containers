@@ -1,4 +1,26 @@
+@font-face {
+  font-family: "Metropolis";
+  font-style: normal;
+  font-weight: 800;
+  src: url("/fonts/Metropolis-Medium.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Metropolis-Light";
+  font-style: normal;
+  font-weight: 300;
+  src: url("/fonts/Metropolis-Light.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 800;
+  src: url("/fonts/Inter-Regular.woff2") format("woff2");
+}
+
 /* General Rules and Resets */
+
 * {
   font-size: inherit;
   margin-block-end: 0;
@@ -15,17 +37,17 @@ html {
   background-color: #fefefe;
   box-sizing: border-box;
   font-size: 12px;
+  overscroll-behavior: none;
 }
 
 body {
   color: #000;
-  font-family: Roboto, Noto, "San Francisco", Ubuntu, "Segoe UI", "Fira Sans", message-box, Arial, sans-serif;
+  font-family: "Inter", "San Francisco", Ubuntu, "Segoe UI", "Fira Sans", message-box, Arial, sans-serif;
   font-size: 13px;
-  inline-size: calc(var(--overflow-size) + 299px);
-
-  /* inline-size: 320px; */
+  inline-size: 352px;
   letter-spacing: -0.1px;
-  max-inline-size: calc(var(--overflow-size) + 299px);
+  max-inline-size: 352px;
+  min-inline-size: 352px;
 
   --highlight-blue: #1296f8;
   --hr-grey: #e3e3e3;
@@ -35,6 +57,10 @@ body {
 html,
 body {
   block-size: 100%; /* Bugfix: issue 948 */
+  max-block-size: 650px;
+  min-block-size: 300px;
+  scrollbar-width: none;
+  transition: height 0.1s ease-in-out;
 }
 
 :root {
@@ -42,6 +68,39 @@ body {
   --title-text-color: #000;
   --text-normal-color: #4a4a4a;
   --text-heading-color: #000;
+  --arrowIconRight: url("/img/arrow-icon-right.svg");
+  --mozillaVpnLogo: url("/img/moz-vpn-logo.svg");
+  --bgColor: #fff;
+  --blue20: #0df;
+  --blue30: #00b3f4;
+  --blue40: #0090ed;
+  --blue50: #0060df;
+  --blue60: #0250bb;
+  --blue70: #054096;
+  --red30: #ff848b;
+  --red40: #ff6a75;
+  --red50: #ff4f5e;
+  --red60: #e22850;
+  --red70: #c50042;
+  --alertColor: var(--red50);
+  --primaryCtaDefault: var(--blue50);
+  --primaryCtaHover: var(--blue60);
+  --primaryCtaActive: var(--blue70);
+  --primaryCtaFocus: rgba(0, 97, 223, .40);
+  --controllerDefault: var(--bgColor);
+  --controllerHover: var(--grey10);
+  --controllerActive: var(--grey20);
+  --green50: #3fe1b0;
+  --green60: #3ad4b3;
+  --green70: #1cc4a0;
+  --green80: #00a49a;
+  --grey10: #e7e7e7;
+  --grey20: #cececf;
+  --grey30: #9e9e9e;
+  --grey40: #6d6e6e;
+  --grey50: #3d3d3d;
+  --panelSize: 560px;
+  --rowHeight: 48px;
 
   /* calculated from 12px */
   --font-size-heading: 1.33rem; /* 16px */
@@ -58,7 +117,6 @@ body {
   --small-text-size: 0.833rem; /* 10px */
   --small-radius: 3px;
   --icon-button-size: calc(calc(var(--block-line-separation-size) * 2) + 1.66rem); /* 20px */
-  --column-panel-inline-size: calc(var(--overflow-size) + 267px);
   --inactive-opacity: 0.3;
   --overflow-size: 1px;
   --icon-fit: 8;
@@ -76,21 +134,10 @@ body {
   box-sizing: inherit;
 }
 
-form {
-  margin-block-end: 0;
-  margin-block-start: 0;
-  margin-inline-end: 0;
-  margin-inline-start: 0;
-}
-
 table {
   border: 0;
   border-spacing: 0;
   inline-size: 100%;
-  margin-block-end: 0;
-  margin-block-start: 0;
-  margin-inline-end: 0;
-  margin-inline-start: 0;
 }
 
 /* Helper Classes */
@@ -101,8 +148,13 @@ table {
 .scrollable {
   flex: 1;
   inline-size: 100%;
-  max-block-size: 400px;
+  margin-block-end: 8px;
   overflow: auto;
+  overscroll-behavior: none;
+}
+
+.scrollable.identities-list {
+  margin-block-end: 8px;
 }
 
 .offpage {
@@ -260,18 +312,572 @@ table {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
+/* Toggle Switch */
+
+.switch {
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  width: 45px;
+}
+
+.switch input {
+  height: 0;
+  opacity: 0;
+  width: 0;
+}
+
+.slider {
+  background-color: var(--grey20);
+  border-radius: 24px;
+  bottom: 0;
+  box-shadow: 0 0 0 2px var(--bgColor), 0 0 0 4px var(--bgColor);
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .2s ease-in-out;
+}
+
+.slider:before {
+  background-color: var(--bgColor);
+  border-radius: 50%;
+  bottom: 3px;
+  content: "";
+  height: 18px;
+  left: 3px;
+  position: absolute;
+  transition: .2s ease-in-out;
+  width: 18px;
+}
+
+input:hover + .slider {
+  background-color: var(--grey30);
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 0 2px var(--bgColor), 0 0 0 4px var(--grey30);
+}
+
+input:active + .slider {
+  background-color: var(--grey40);
+}
+
+input:checked + .slider {
+  background-color: var(--green50);
+}
+
+input:checked:hover + .slider {
+  background-color: var(--green60);
+}
+
+input:checked:focus + .slider {
+  box-shadow: 0 0 0 2px var(--bgColor), 0 0 0 4px var(--green70);
+}
+
+input:checked:active + .slider {
+  background-color: var(--green70);
+}
+
+input:checked + .slider:before {
+  transform: translateX(21px);
+}
+
+/* Primary CTA Buttons */
+
+.primary-cta {
+  background-color: var(--primaryCtaDefault);
+  border: transparent;
+  border-radius: 4px;
+  color: #fff;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.primary-cta:hover {
+  background-color: var(--primaryCtaHover);
+}
+
+.primary-cta:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--blue60), 0 0 0 4px var(--primaryCtaFocus);;
+}
+
+.primary-cta:active {
+  background-color: var(--primaryCtaActive);
+}
+
+/* Mozilla VPN Controller UI in Container Management Panel */
+
+.moz-vpn-controller-content {
+  display: flex;
+  flex-direction: column;
+  padding-block-start: 12px;
+  max-height: 48px;
+  box-shadow: 0 0 0 1px var(--hr-grey);
+}
+
+.current-country-flag {
+  display: inline-block;
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: contain;
+  height: 16px;
+  width: 16px;
+}
+
+.moz-vpn-controller-content {
+  max-height: 500px;
+}
+
+#get-mozilla-vpn {
+  height: 32px;
+  margin-block: 16px;
+  margin-inline: 20px;
+  text-align: center;
+}
+
+#moz-vpn-current-server {
+  align-items: center;
+  border: none;
+  display: flex;
+  height: 48px;
+  background-image: var(--arrowIconRight);
+  background-position: calc(100% - 24px) center;
+  background-repeat: no-repeat;
+  background-size: 9px;
+  outline: none;
+  padding-inline-start: 20px;
+}
+
+.current-city-name {
+  padding-inline-start: 12px;
+}
+
+.collapsible-content {
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-height 0.2s ease-in-out, opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.moz-vpn-subtitle {
+  color: var(--text-grey);
+}
+
+.moz-vpn-subtitle,
+.moz-vpn-controller-content > .flx-row.flx-space-between {
+  width: calc(100% - 40px);
+  margin-inline: auto;
+}
+
+.controller-collapsible-content {
+  padding-block-start: 12px;
+}
+
+.expanded .collapsible-content {
+  max-height: 500px;
+  opacity: 1;
+  visibility: visible;
+}
+
+.hide-label,
+.show-label {
+  line-height: 100%;
+  position: absolute;
+  right: 0;
+  transition: visibility 0.2s ease-in-out, color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.hide-label,
+.expanded .show-label {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.blue-link {
+  box-sizing: content-box;
+}
+
+.expanded .hide-label,
+.show-label {
+  visibility: visible;
+  opacity: 1;
+}
+
+.blue-link {
+  pointer-events: all;
+}
+
+/* Advanced Proxy Settings Button */
+
+.advanced-proxy-settings-btn {
+  background-color: var(--bgColor);
+  box-shadow: 0 0 0 1px var(--hr-grey);
+  background-image: url("/img/gear-icon.svg"), var(--arrowIconRight);
+  background-position: 16px center, calc(100% - 24px) center;
+  background-repeat: no-repeat;
+  background-size: 24px 24px, 9px;
+  border: none;
+  color: var(--text-grey);
+  line-height: 48px;
+  outline: none;
+  padding-inline-start: 44px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.advanced-proxy-settings-btn:hover,
+.advanced-proxy-settings-btn:focus {
+  background-color: var(--grey10);
+  outline: none;
+}
+
+/* Mozilla VPN Server list */
+
+.moz-vpn-logotype {
+  background-image: var(--mozillaVpnLogo);
+  background-repeat: no-repeat;
+  background-size: 20px;
+  background-position: left center;
+  font-family: "Metropolis";
+  font-size: 15px;
+  line-height: 24px;
+  padding-inline-start: 24px;
+}
+
+#mozilla-vpn-server-list-panel {
+  block-size: var(--panelSize);
+  max-block-size: var(--panelSize);
+  min-block-size: var(--panelSize);
+  min-block-size: var(--panelSize)
+}
+
+h3.title.proxy-panel-title {
+  line-height: var(--rowHeight);
+  block-size: var(--rowHeight);
+  border-bottom: 1px solid var(--hr-grey);
+  position: fixed;
+  z-index: 1;
+  background-color: var(--bgColor);
+  box-shadow: 0 0 13px -2px #b5b5b500;
+  transition: box-shadow 0.5s ease;
+}
+
+.drop-shadow {
+  box-shadow: 0 0 13px -2px #b5b5b54d !important;
+}
+
+.mozilla-vpn-server-list {
+  padding-top: 4px;
+  font-size: 15px;
+  color: var(--grey50);
+  position: absolute;
+  top: var(--rowHeight);
+  left: 0;
+  right: 0;
+  overflow: scroll;
+  overscroll-behavior: none;
+  block-size: calc(var(--panelSize) - var(--rowHeight));
+  min-block-size: calc(var(--panelSize) - var(--rowHeight));
+}
+
+#moz-vpn-return {
+  z-index: 2;
+  position: fixed;
+  top: 16px;
+}
+
+.server-list-item {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background-color: var(--bgColor);
+}
+
+.server-country-flag {
+  width: 16px;
+  margin-inline-start: 16px;
+  margin-block: auto;
+  pointer-events: none;
+}
+
+.server-country-name {
+  padding: 0 0 0 20px;
+  font-family: "Metropolis";
+  pointer-events: none;
+  color: var(--text-heading-color);
+}
+
+.server-city-name {
+  font-family: "Metropolis-Light";
+  font-weight: 300;
+  color: var(--text-grey);
+}
+
+.server-city-list-item,
+.server-city-list-visibility-btn {
+  height: 40px;
+  margin-block-start: 4px;
+  margin-block-end: 4px;
+  margin-inline-start: 8px;
+  margin-inline-end: 8px;
+  width: calc(100% - 16px);
+}
+
+.server-city-list-visibility-btn {
+  display: flex;
+  background-color: var(--bgColor);
+  border-radius: 4px;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.server-city-list-visibility-btn:hover {
+  background-color: var(--grey10);
+}
+
+.server-city-list-visibility-btn:active {
+  background-color: var(--grey20);
+}
+
+.toggle {
+  background-image: url("/img/arrow-toggle.svg");
+  background-position: center center;
+  background-repeat: no-repeat;
+  height: 24px;
+  margin-inline-start: 8px;
+  pointer-events: none;
+  transform: rotate(-90deg);
+  transition: transform 0.275s ease-in-out;
+  width: 24px;
+}
+
+.expanded .toggle {
+  transform: rotate(0deg);
+}
+
+.server-city-list {
+  height: 0;
+  opacity: 0;
+  transition: height 0.3s ease-in-out, opacity 0.3s ease, visibility 0.4s ease;
+  visibility: hidden;
+}
+
+.expanded .server-city-list {
+  opacity: 1;
+  visibility: visible;
+}
+
+.server-city-list {
+  list-style-type: none;
+}
+
+.server-city-list-item {
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.server-city-name {
+  padding-inline-start: 18px;
+}
+
+/* ----- controller buttons ------- */
+
+.controller {
+  background-color: var(--bgColor);
+  color: var(--text-grey);
+}
+
+.controller:hover,
+.controller:focus {
+  background-color: var(--controllerHover);
+}
+
+.controller:active {
+  background-color: var(--controllerActive);
+}
+
+/* ------------ SERVER LIST RADIO BUTTONS ------------ */
+
+.server-radio-btn:checked + .server-radio-control {
+  border-color: var(--primaryCtaDefault);
+  transition: border-color .2s ease;
+}
+
+.server-radio-btn {
+  height: 20px;
+  opacity: 0;
+  position: fixed;
+  width: 20px;
+}
+
+.server-radio-control {
+  border-color: #6d6d6d;
+  border-radius: 50%;
+  border-style: solid;
+  border-width: 2px;
+  height: 20px;
+  margin-inline-start: 46px;
+  pointer-events: none;
+  position: relative;
+  width: 20px;
+}
+
+.server-radio-control::after {
+  background-color: var(--grey50);
+  border-radius: 50%;
+  bottom: 0;
+  content: "";
+  height: 12px;
+  left: 0;
+  margin: auto;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: opacity 0.2s ease;
+  width: 12px;
+}
+
+/* Unchecked radio button styles */
+
+.server-city-list-item:hover .server-radio-control {
+  border-color: var(--grey50);
+}
+
+.server-city-list-item:hover .server-radio-control::after {
+  opacity: .1
+}
+
+/* Checked radio button rules */
+
+.server-city-list-item:hover .server-radio-btn:checked + .server-radio-control {
+  border-color: var(--primaryCtaDefault)
+}
+
+.server-radio-btn:checked + .server-radio-control:after {
+  background-color: var(--primaryCtaDefault);
+  opacity: 1;
+}
+
+/* Helpers */
+
+.flx-space-between {
+  justify-content: space-between;
+}
+
+.flx-row {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+}
+
+v-padding-hack16 {
+  height: 16px;
+}
+
+v-padding-hack-4 {
+  height: 4px;
+  width: 100%;
+}
+
+v-padding-hack-48 {
+  height: 48px;
+  width:100%;
+}
+
+.flx-col {
+  display: flex;
+  flex-direction: column;
+}
+
+fieldset {
+  padding-block-end: 8px;
+}
+
+/* ------- Advanced Proxy Panel ---------- */
+
+.advanced-proxy-panel-content {
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--rowHeight) + 16px) 20px 16px 20px;
+}
+
+#proxy-host-submit {
+  border-radius: 4px;
+  height: 32px;
+}
+
+#clear-proxy-host {
+  border-radius: 4px;
+  border: none;
+  display: flex;
+  justify-content: center;
+  margin-block-start: 8px;
+  padding: 8px 16px;
+}
+
+/* ------ Url Input ----- */
+
+input[type=url] {
+  block-size: 40px;
+  border-radius: 4px;
+  background-color: var(--bgColor);
+  color: var(--text-grey);
+  margin-bottom: 16px;
+  padding: 16px;
+}
+
+/* Blue links */
+
+.blue-link {
+  align-items: center;
+  background-color: transparent;
+  border-bottom: 1px solid var(--bgColor);
+  border: none;
+  color: var(--blue50);
+  display: flex;
+  height: 24px;
+  line-height: 24px;
+  position: relative;
+  transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+}
+
+.blue-link,
+.hide-show-label {
+  height: 24px;
+  line-height: 24px;
+}
+
+.blue-link:hover {
+  color: var(--blue60);
+}
+
+.blue-link:focus,
+.blue-link:focus .hide-show-label {
+  border-bottom: 1px solid var(--blue50);
+  outline: none;
+}
+
+/* ------------ ------------ ------------ ------------ */
+
 /* Panels keep everything together */
 .panel {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-block-size: 400px;
+  max-block-size: 601px;
+  transition: height 0.1s ease-in-out;
+}
+
+.delete-container-panel {
+  min-block-size: 300px;
 }
 
 .panel.onboarding,
 .achievement-panel {
   align-items: center;
-  block-size: 360px;
   margin-block-end: 16px;
   margin-block-start: 16px;
   margin-inline-end: 16px;
@@ -445,13 +1051,15 @@ manage things like container crud */
 .panel-footer {
   align-items: center;
   background: #efefef;
-  block-size: var(--icon-button-size);
+  block-size: 48px;
   border-block-end: 1px solid #d8d8d8;
   color: #000;
   display: flex;
   font-size: 13px;
   inline-size: 100%;
   justify-content: space-between;
+  /* position: absolute;
+  bottom: 0; */
 }
 
 .container-info-has-tabs,
@@ -575,14 +1183,6 @@ manage things like container crud */
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  inline-size: 80%;
-  margin-block-end: 10px;
-  margin-inline-end: 0;
-  margin-inline-start: 0;
-  padding-block-end: 0;
-  padding-block-start: 0;
-  padding-inline-end: 0;
-  padding-inline-start: 0;
 }
 
 .edit-container-panel fieldset:last-of-type {
@@ -590,27 +1190,20 @@ manage things like container crud */
 }
 
 .edit-container-panel input[type="text"] {
-  block-size: 36px;
-  border-radius: 3px;
-  font-size: 14px;
+  block-size: 40px;
+  border-radius: 4px;
   inline-size: 100%;
-  padding-block-end: 5px;
-  padding-block-start: 5px;
-  padding-inline-end: 5px;
-  padding-inline-start: 5px;
+  padding: 16px;
 }
 
 .edit-container-panel legend,
 .options-header {
   flex: 1 0;
   font-size: 14px !important;
-  margin-block-end: 4px;
-  margin-block-start: -6px;
 }
 
 .options-header {
-  margin-block-end: 8px;
-  margin-block-start: 6px;
+  padding-block: 8px;
 }
 
 /* Achievement panel elements */
@@ -664,13 +1257,14 @@ manage things like container crud */
 }
 
 h3.title {
-  block-size: 40px;
+  block-size: 48px;
   color: #000;
+  font-family: "Metropolis";
   font-size: 13px;
   font-weight: bold;
   inline-size: 100%;
   letter-spacing: -0.1px;
-  line-height: 40px;
+  line-height: 48px;
   text-align: center;
 }
 
@@ -681,14 +1275,14 @@ h3.title {
 
 .menu-item {
   cursor: pointer;
-  height: 24px;
+  height: 28px;
   inline-size: 100%;
-  line-height: 24px;
+  line-height: 28px;
 }
 
 .menu-item td {
+  align-items: center;
   display: flex;
-  max-inline-size: 300px;
 }
 
 .menu-item.drag-over td {
@@ -713,10 +1307,6 @@ h3.title {
   max-inline-size: 260px;
 }
 
-.menu-text {
-  line-height: 24px;
-}
-
 .menu-icon {
   display: block;
   height: 16px;
@@ -738,26 +1328,25 @@ h3.title {
   height: 24px;
   inline-size: 60px;
   text-align: right;
+  margin-inline-start: auto;
+  margin-inline-end: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .container-count {
   opacity: 0.6;
-  padding-block-end: 0;
-  padding-block-start: 0;
-  padding-inline-end: 6px;
-  padding-inline-start: 0;
   text-align: right;
 }
 
 .menu-arrow {
-  display: inline-block;
-  float: right;
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
   height: 24px;
   inline-size: 18px;
-  padding-block-end: 6px;
-  padding-block-start: 6px;
-  padding-inline-end: 12px;
-  padding-inline-start: 0;
+  margin-inline-end: 16px;
   text-align: center;
 }
 
@@ -774,80 +1363,80 @@ hr {
   border: 0;
   border-block-start: 1px solid var(--hr-grey);
   display: block;
-  margin-block-end: 0;
-  margin-block-start: 6px;
-  margin-inline-end: 0;
-  margin-inline-start: 0;
-  padding-block-end: 6px;
-  padding-block-start: 0;
-  padding-inline-end: 0;
-  padding-inline-start: 0;
 }
 
 .sub-header {
   color: var(--text-grey);
   height: 24px;
   line-height: 24px;
+  margin-block-start: 4px;
   padding-block-end: 0;
   padding-block-start: 0;
-  padding-inline-end: 16px;
-  padding-inline-start: 16px;
+  padding-inline-start: 20px;
 }
 
 .edit-form {
   color: var(--text-grey);
   flex: 1;
-  padding-block-end: 0;
-  padding-block-start: 0;
-  padding-inline-end: 16px;
-  padding-inline-start: 16px;
-}
-
-.identities-list {
-  margin-block-end: 41px;
-  margin-block-start: 0;
-  margin-inline-end: 0;
-  margin-inline-start: 0;
+  padding-block-end: 16px;
+  padding-block-start: 16px;
+  padding-inline-end: 20px;
+  padding-inline-start: 20px;
 }
 
 .bottom-btn {
   background-color: var(--hr-grey);
-  border: solid 1px #d9d9d9;
+  bottom: 0;
+  box-shadow: 0 0 0 1px #d9d9d9;
   cursor: pointer;
-  height: 41px;
+  height: 48px;
   inline-size: 100%;
   inset-block-end: 0;
   line-height: 41px;
-  padding-block-end: 0;
-  padding-block-start: 0;
   padding-inline-end: 16px;
   padding-inline-start: 16px;
-  position: fixed;
-}
-
-.delete-container {
-  background-color: #fff;
-  border-block-start: solid 1px var(--hr-grey);
-  cursor: default;
-  display: flex;
-  height: 65px;
-  inline-size: 100%;
-  justify-content: space-between;
-  padding-block-end: 27px;
-  padding-block-start: 9px;
-  padding-inline-end: 18px;
-  padding-inline-start: 17px;
+  position: absolute;
+  text-align: center;
 }
 
 .delete-btn {
-  background-color: rgba(12, 12, 13, 0.1);
-  border: 0;
-  border-radius: 2px;
+  background-color: var(--bgColor);
+  border: none;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow: 0 0 0 1px var(--hr-grey);
+  color: var(--alertColor);
+  cursor: default;
+  display: flex;
+  height: var(--rowHeight);
+  justify-content: center;
+  line-height: var(--rowHeight);
+  transition: background-color .2s ease-in-out, border-color .2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.alert-text {
+  font-family: "Metropolis";
+  background-color: var(--bgColor);
+  color: var(--alertColor);
   cursor: pointer;
-  height: 30px;
-  inline-size: 100%;
-  line-height: 30px;
   text-align: center;
+}
+
+.alert-text:hover,
+.alert-text:focus {
+  background-color: rgba(255, 79, 94, 0.05);
+  box-shadow: 0 0 0 1px rgba(255, 79, 94, 0.05);
+}
+
+.delete-btn:active {
+  background-color: rgba(255, 79, 94, 0.1);
+  box-shadow: 0 0 0 1px var(--alertColor);
+}
+
+.delete-btn:focus {
+  box-shadow: 0 0 0 1px var(--alertColor);
+  outline: none;
 }
 
 .btn-return.arrow-left {
@@ -860,6 +1449,7 @@ hr {
   inset-block-start: 15px;
   left: 15px;
   position: absolute;
+  z-index: 2;
 }
 
 input {
@@ -877,32 +1467,28 @@ input {
 }
 
 .edit-container-panel-name-input {
-  height: 29px;
+  color: var(--text-grey);
+  height: 32px;
 }
 
 .container-options {
-  height: 23px;
+  height: 24px;
 }
 
 .site-isolation {
   inset-block-end: auto;
-  position: fixed;
 }
 
 .options-label {
   cursor: pointer;
-  padding-inline-start: 25px;
-}
-
-.manage-assigned-sites-list {
-  color: var(--highlight-blue);
+  padding-inline-start: 8px;
 }
 
 .info-icon {
   cursor: pointer;
   height: 16px;
   inline-size: 16px;
-  inset-block-start: 13px;
+  inset-block-start: 16px;
   position: absolute;
   right: 13px;
   text-align: center;
@@ -918,7 +1504,6 @@ input {
 
 .trash-button {
   display: inline-block;
-  float: right;
   height: 16px;
   inline-size: 16px;
   margin-block-end: 4px;
@@ -943,7 +1528,7 @@ tr:hover > td > .trash-button {
   inline-size: 16px;
   margin-block-end: 4px;
   margin-block-start: 4px;
-  margin-inline-end: 10px;
+  margin-inline-end: 20px;
   margin-inline-start: auto;
   text-align: center;
 }
@@ -954,29 +1539,39 @@ tr:hover > td > .trash-button {
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --arrowIconRight: url("/img/arrow-icon-right-light.svg");
+    --mozillaVpnLogo: url("/img/moz-vpn-logo-light.svg");
+    --bgColor: #42404c;
     --title-text-color: #fff;
     --text-normal-color: #f9f9fa;
     --text-heading-color: #fff;
+    --primaryCtaDefault: var(--blue40);
+    --bottomButtons: #52515d;
+    --highlight-blue: #52515d;
+    --controllerHover: #52515d;
+    --controllerActive: rgb(90, 89, 102);
+    --bgDark: #2b2932;
   }
 
   html {
-    background-color: #4a4a4a;
+    background-color: var(--bgColor);
   }
 
   body {
     color: #fff;
-
+    --highlight-blue: #52515d;
     --hr-grey: #38383d;
-    --text-grey: #f9f9fa;
+    --text-grey: #fefffe;
   }
 
   h3.title {
     color: #fff;
   }
 
+  .delete-btn,
   .bottom-btn {
-    background-color: #737373;
-    border: solid 1px #737373;
+    background-color: var(--bottomButtons);
+    box-shadow: 0 0 0 1px #73737300;
   }
 
   .btn-return.arrow-left {
@@ -994,7 +1589,6 @@ tr:hover > td > .trash-button {
 
   #edit-container-panel-name-input {
     background-color: #38383d;
-    color: #fff;
   }
 
   .delete-container {
@@ -1002,14 +1596,13 @@ tr:hover > td > .trash-button {
   }
 
   .delete-btn {
-    background-color: #737373;
     color: #f9f9fa;
   }
 
+  .delete-btn,
   .cancel-button,
   .grey-button {
-    background-color: #737373;
-    color: #fff;
+    background-color: var(--bottomButtons);
   }
 
   .button.secondary:hover,
@@ -1035,15 +1628,22 @@ tr:hover > td > .trash-button {
   }
 
   .truncate-text::after {
-    background: #4a4a4a;
-    mask-image: linear-gradient(to right, transparent, #4a4a4a 70%);
+    background: var(--bgColor);
+    mask-image: linear-gradient(to right, transparent, var(--bgColor) 70%);
   }
 
   [data-identity-color="grey"] {
+
     --identity-icon-color: #ededf0;
   }
 
   [type="radio"]:checked + [data-identity-color="grey"] {
+
     --identity-icon-color: #616161;
+  }
+
+  .moz-vpn-controller-content,
+  .advanced-proxy-settings-btn {
+    box-shadow: 0 0 0 1px var(--bottomButtons);
   }
 }

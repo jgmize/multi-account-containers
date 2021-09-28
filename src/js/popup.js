@@ -1,6 +1,8 @@
+
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this file,
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 
 const CONTAINER_HIDE_SRC = "/img/password-hide.svg";
 const CONTAINER_UNHIDE_SRC = "/img/password-hide.svg";
@@ -31,6 +33,9 @@ const P_CONTAINER_EDIT = "containerEdit";
 const P_CONTAINER_DELETE = "containerDelete";
 const P_CONTAINERS_ACHIEVEMENT = "containersAchievement";
 const P_CONTAINER_ASSIGNMENTS = "containerAssignments";
+
+const P_MOZILLA_VPN_SERVER_LIST = "mozilla-vpn-server-list";
+const P_ADVANCED_PROXY_SETTINGS = "advanced-proxy-settings-panel";
 
 function addRemoveSiteIsolation() {
   const identity = Logic.currentIdentity();
@@ -371,7 +376,7 @@ const Logic = {
     const closeContEl = document.querySelector("#close-container-picker-panel");
     if (!this._listenerSet) {
       Utils.addEnterHandler(closeContEl, () => {
-        Logic.showPreviousPanel();
+        Logic.showPanel(P_CONTAINERS_LIST);
       });
       this._listenerSet = true;
     }
@@ -668,6 +673,7 @@ Logic.registerPanel(P_CONTAINERS_LIST, {
   async prepare() {
     const fragment = document.createDocumentFragment();
 
+
     Logic.identities().forEach(identity => {
       const tr = document.createElement("tr");
       tr.classList.add("menu-item", "hover-highlight", "keyboard-nav", "keyboard-right-arrow-override");
@@ -782,8 +788,6 @@ Logic.registerPanel(P_CONTAINER_INFO, {
       });
       window.close();
     });
-
-
   },
 
   // This method is called when the panel is shown.
@@ -979,12 +983,12 @@ Logic.registerPanel(MANAGE_CONTAINERS_PICKER, {
   },
 
   // This method is called when the panel is shown.
-  prepare() {
+  async prepare() {
     Logic.listenToPickerBackButton();
     const closeContEl = document.querySelector("#close-container-picker-panel");
     if (!this._listenerSet) {
       Utils.addEnterHandler(closeContEl, () => {
-        Logic.showPreviousPanel();
+        Logic.showPanel(P_CONTAINERS_LIST);
       });
       this._listenerSet = true;
     }
@@ -998,7 +1002,7 @@ Logic.registerPanel(MANAGE_CONTAINERS_PICKER, {
       <table class="menu">
         <tr class="menu-item hover-highlight keyboard-nav" id="new-container" tabindex="0">
           <td>
-            <div class="menu-icon"><img alt="New Container" src="/img/new-16.svg" />
+            <div class="menu-icon"><img src="/img/new-16.svg" />
             </div>
             <span class="menu-text">${ browser.i18n.getMessage("newContainer") }</span>
           </td>
@@ -1321,7 +1325,7 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
       if (formValues.get("container-id") !== NEW_CONTAINER_ID) {
         this._submitForm();
       } else {
-        Logic.showPreviousPanel();
+        Logic.showPanel(MANAGE_CONTAINERS_PICKER);
       }
     });
 
@@ -1330,7 +1334,7 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
       this._submitForm();
     });
     Utils.addEnterHandler(document.querySelector("#create-container-cancel-link"), () => {
-      Logic.showPreviousPanel();
+      Logic.showPanel(MANAGE_CONTAINERS_PICKER);
     });
 
     Utils.addEnterHandler(document.querySelector("#create-container-ok-link"), () => {
@@ -1353,9 +1357,9 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
         }
       });
       await Logic.refreshIdentities();
-      Logic.showPreviousPanel();
+      Logic.showPanel(MANAGE_CONTAINERS_PICKER);
     } catch (e) {
-      Logic.showPanel(P_CONTAINERS_LIST);
+      Logic.showPanel(MANAGE_CONTAINERS_PICKER);
     }
   },
 
@@ -1392,6 +1396,87 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
   // This method is called when the panel is shown.
   async prepare() {
     const identity = Logic.currentIdentity();
+    await browser.runtime.sendMessage({method: "getMozillaVpnServers"});
+
+    class MozVpnContainerUi extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      async connectedCallback() {
+        const { authenticatedMozVpnUser } = await browser.storage.local.get("authenticatedMozVpnUser");
+        this.subtitle = this.querySelector(".moz-vpn-subtitle");
+        this.collapsibleContent = this.querySelector(".collapsible-content");
+        this.visibilityTogglers = this.querySelectorAll(".hide-show-label");
+        this.hideShowButton = this.querySelector(".expand-collapse");
+        this.primaryCta = this.querySelector("#get-mozilla-vpn");
+        this.currentServerButton = this.querySelector("#moz-vpn-current-server");
+        this.switch = this.querySelector(".switch");
+
+        this.visibilityTogglers.forEach(el => {
+          el.addEventListener("click", this);
+          el.addEventListener("keyup", this);
+        });
+        if (!authenticatedMozVpnUser) {
+          this.visibilityTogglers = this.querySelectorAll(".hide-show-label");
+          this.visibilityTogglers.forEach(el => {
+            el.addEventListener("click", this);
+            el.addEventListener("keyup", this);
+          });
+
+          this.subtitle.textContent = "Protect this container with Mozilla VPN";
+          this.primaryCta = this.querySelector(".mozilla-vpn-cta");
+          this.primaryCta.addEventListener("click", this);
+          this.currentServerButton.style.display = "none";
+          this.switch.style.display = "none";
+        }
+        if (authenticatedMozVpnUser) {
+          this.primaryCta.style.display = "none";
+          this.hideShowButton.style.display = "none";
+
+          const getCurrentServer = async() => {
+            return await browser.storage.local.get("mozVpnCurrentServerInfo");
+          };
+
+          getCurrentServer().then(value  => {
+            const { mozVpnCurrentServerInfo } = value;
+            this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = `url("./img/flags/${mozVpnCurrentServerInfo.countryCode.toUpperCase()}.png")`;
+            this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = mozVpnCurrentServerInfo.countryCode + ".png";
+            this.currentServerButton.querySelector(".current-city-name").textContent = mozVpnCurrentServerInfo.cityName;
+          });
+
+          if (!this.currentServerButton.classList.contains("attached-events")) {
+            this.currentServerButton.addEventListener("click", () => {
+              Logic.showPanel(P_MOZILLA_VPN_SERVER_LIST, identity);
+            });
+            this.currentServerButton.classList.add("attached-events");
+          }
+        }
+      }
+
+      handleEvent(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        this.classList.toggle("expanded");
+      }
+    }
+
+    if (!customElements.get("moz-vpn-container-ui")) {
+      customElements.define("moz-vpn-container-ui", MozVpnContainerUi);
+    } else {
+      const mozUi = document.querySelector(".moz-vpn-controller-content");
+      mozUi.connectedCallback();
+    }
+
+
+    // Add event listener to advanced proxy settings button
+    const advancedProxySettingsButton = document.querySelector(".advanced-proxy-settings-btn");
+    if (!advancedProxySettingsButton.classList.contains("has-attached-listeners")) {
+      advancedProxySettingsButton.classList.toggle("has-attached-listeners");
+      Utils.addEnterHandler(advancedProxySettingsButton, () => {
+        Logic.showPanel(P_ADVANCED_PROXY_SETTINGS, identity);
+      });
+    }
 
     // Populating the panel: name and icon
     document.getElementById("container-edit-title").textContent = identity.name;
@@ -1400,6 +1485,7 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
     document.querySelector("#edit-container-panel .panel-footer").hidden = !!userContextId;
     document.querySelector("#edit-container-panel .delete-container").hidden = !userContextId;
     document.querySelector("#edit-container-options").hidden = !userContextId;
+    document.querySelector("moz-vpn-container-ui").hidden = !userContextId;
 
     Utils.addEnterHandler(document.querySelector("#manage-assigned-sites-list"), () => {
       Logic.showPanel(P_CONTAINER_ASSIGNMENTS, identity);
@@ -1427,8 +1513,152 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
     Utils.addEnterHandler(deleteButton, () => {
       Logic.showPanel(P_CONTAINER_DELETE, identity);
     });
+
     return Promise.resolve(null);
   },
+});
+
+Logic.registerPanel(P_ADVANCED_PROXY_SETTINGS, {
+  panelSelector: "#advanced-proxy-settings-panel",
+
+  initialize(){
+    const returnButton = document.getElementById("advanced-proxy-settings-return");
+    Utils.addEnterHandler(returnButton, () => {
+      Logic.showPreviousPanel();
+    });
+  },
+  prepare() {
+    return Promise.resolve(null);
+  }
+});
+
+Logic.registerPanel(P_MOZILLA_VPN_SERVER_LIST, {
+  panelSelector: "#mozilla-vpn-server-list-panel",
+  async initialize() {
+    await browser.runtime.sendMessage({method: "getMozillaVpnServers"});
+  },
+  async prepare() {
+    const identity = Logic.currentIdentity();
+
+    Logic._previousPanelPath = [];
+    const returnToContainerEdit = document.getElementById("moz-vpn-return");
+    if (!returnToContainerEdit.classList.contains("has-attached-listeners")) {
+      Utils.addEnterHandler(document.getElementById("moz-vpn-return"), async () => {
+        const selectedServer = document.querySelector(".server-radio-btn:checked");
+  
+        await browser.storage.local.set({ "mozVpnCurrentServerInfo" : {
+          "countryCode": selectedServer.dataset.countryCode,
+          "cityName": selectedServer.dataset.cityName
+        } });
+        Logic.showPanel(P_CONTAINER_EDIT, identity);
+      });
+
+      returnToContainerEdit.classList.add("has-attached-listeners");
+    }
+
+    const { mozVpnCurrentServerInfo } = await browser.storage.local.get("mozVpnCurrentServerInfo");
+
+    const { mozillaVpnServers } = await browser.storage.local.get("mozillaVpnServers");
+
+    const listWrapper = document.getElementById("mozilla-vpn-server-list");
+    const chooseLocationTitle = document.getElementById("vpn-server-list-title");
+    const titleClassList = chooseLocationTitle.classList;
+    listWrapper.onscroll = () => {
+      const titleHasShadow = titleClassList.contains("drop-shadow");
+      if (listWrapper.scrollTop < 48 && titleHasShadow) {
+        titleClassList.remove("drop-shadow");
+      }
+      if (!titleHasShadow && listWrapper.scrollTop > 48 ) {
+        titleClassList.add("drop-shadow");
+      }
+    };
+
+    if (listWrapper.classList.contains("list-is-ready")) {
+      document.querySelectorAll(".server-list-item").forEach(listItem => {
+        if (listItem.dataset.countryCode === mozVpnCurrentServerInfo.countryCode) {
+          listItem.classList.add("expanded");
+
+          listItem.querySelectorAll("input").forEach(radioBtn => {
+            if (radioBtn.dataset.cityName === mozVpnCurrentServerInfo.cityName) {
+              radioBtn.checked = true;
+            }
+          });
+        } else {
+
+          listItem.classList.remove("expanded");
+          listItem.querySelector("ul").style.height = "0";
+        }
+      });
+      return;
+    }
+
+    mozillaVpnServers.forEach((serverCountry) => {
+      const listItemTemplate = document.getElementById("server-list-item");
+      const templateClone = listItemTemplate.content.cloneNode(true);
+      const serverListItem = templateClone.querySelector(".server-list-item");
+      serverListItem.dataset.countryCode = serverCountry.code;
+
+      // Country name
+      const serverCountryName = templateClone.querySelector(".server-country-name");
+      serverCountryName.textContent = serverCountry.name;
+
+      // Flag
+      const serverCountryFlagImage = templateClone.querySelector(".server-country-flag");
+      serverCountryFlagImage.src = `../img/flags/${serverCountry.code}.png`;
+
+      const toggleCityListVisibility = (listItem) => {
+
+        const citiesList = listItem.querySelector("ul");
+        listItem.classList.toggle("expanded");
+        if (listItem.classList.contains("expanded")) {
+          // Expand city list
+          citiesList.style.height = (serverCountry.cities.length * 48) + "px";
+        } else {
+          // Collapse city list
+          citiesList.style.height = 0;
+        }
+      };
+
+      const cityListVisibilityButton = templateClone.querySelector("button");
+
+      cityListVisibilityButton.addEventListener("click", (e) => {
+        const listItem = e.target.parentElement;
+        toggleCityListVisibility(listItem);
+      });
+
+      if (mozVpnCurrentServerInfo.countryCode === serverCountry.code) {
+        toggleCityListVisibility(templateClone.querySelector(".server-list-item"));
+      }
+
+      // Make server city list
+      const cityList = templateClone.querySelector("ul");
+      const cityListTemplate = document.getElementById("server-city-list-items");
+
+      serverCountry.cities.forEach(city => {
+        const cityTemplateClone = cityListTemplate.content.cloneNode(true);
+
+        const cityName = cityTemplateClone.querySelector(".server-city-name");
+
+        // Server city radio inputs
+        const radioBtn = cityTemplateClone.querySelector("input");
+        radioBtn.dataset.countryCode = serverCountry.code;
+        radioBtn.dataset.cityName = city.name;
+        radioBtn.name = "server-city";
+
+        // Set city name
+        cityName.textContent = city.name;
+        cityList.appendChild(cityTemplateClone);
+      });
+      listWrapper.appendChild(templateClone);
+    });
+
+    const currentCityRadioBtn = document.querySelector(`[data-city-name='${mozVpnCurrentServerInfo.cityName}']`);
+    currentCityRadioBtn.checked = true;
+
+    listWrapper.classList.add("list-is-ready");
+
+    return Promise.resolve(null);
+  }
 
 });
 
@@ -1441,10 +1671,10 @@ Logic.registerPanel(P_CONTAINER_DELETE, {
   // This method is called when the object is registered.
   initialize() {
     Utils.addEnterHandler(document.querySelector("#delete-container-cancel-link"), () => {
-      Logic.showPreviousPanel();
+      Logic.showPanel(MANAGE_CONTAINERS_PICKER);
     });
     Utils.addEnterHandler(document.querySelector("#close-container-delete-panel"), () => {
-      Logic.showPreviousPanel();
+      Logic.showPanel(MANAGE_CONTAINERS_PICKER);
     });
     Utils.addEnterHandler(document.querySelector("#delete-container-ok-link"), async () => {
       /* This promise wont resolve if the last tab was removed from the window.
@@ -1455,9 +1685,9 @@ Logic.registerPanel(P_CONTAINER_DELETE, {
       try {
         await Logic.removeIdentity(Utils.userContextId(Logic.currentIdentity().cookieStoreId));
         await Logic.refreshIdentities();
-        Logic.showPanel(P_CONTAINERS_LIST);
+        Logic.showPanel(MANAGE_CONTAINERS_PICKER);
       } catch (e) {
-        Logic.showPanel(P_CONTAINERS_LIST);
+        Logic.showPanel(MANAGE_CONTAINERS_PICKER);
       }
     });
   },
