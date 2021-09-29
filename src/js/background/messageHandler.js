@@ -92,12 +92,14 @@ const messageHandler = {
         );
         break;
       case "getMozillaVpnServers":
-        response = await backgroundLogic.getMozillaVpnServers();
+        response = await mozillaVpn.getMozillaVpnServers();
+        break;
+      case "pickServerBasedOnWeight":
         break;
       case "assignAndReloadInContainer":
         tab = await assignManager.reloadPageInContainer(
           m.url, 
-          m.currentUserContextId, 
+          m.currentUserContextId,
           m.newUserContextId, 
           m.tabIndex, 
           m.active,
