@@ -1404,7 +1404,13 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
       }
 
       async connectedCallback() {
-        const { authenticatedMozVpnUser } = await browser.storage.local.get("authenticatedMozVpnUser");
+        const { mozillaVpnHideUi } = await browser.storage.local.get("mozillaVpnHideUi");
+        const { mozillaVpnInstalled } = await browser.storage.local.get("mozillaVpnInstalled");
+        if (mozillaVpnHideUi && !mozillaVpnInstalled && this.classList.contains("expanded")) {
+          this.classList.remove("expanded");
+          this.style.maxHeight = 48 + "px";
+        }
+
         this.subtitle = this.querySelector(".moz-vpn-subtitle");
         this.collapsibleContent = this.querySelector(".collapsible-content");
         this.visibilityTogglers = this.querySelectorAll(".hide-show-label");
@@ -1412,52 +1418,72 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
         this.primaryCta = this.querySelector("#get-mozilla-vpn");
         this.currentServerButton = this.querySelector("#moz-vpn-current-server");
         this.switch = this.querySelector(".switch");
+        this.switchInput = this.querySelector("#mozilla-vpn-switch");
 
-        this.visibilityTogglers.forEach(el => {
-          el.addEventListener("click", this);
-          el.addEventListener("keyup", this);
-        });
-        if (!authenticatedMozVpnUser) {
-          this.visibilityTogglers = this.querySelectorAll(".hide-show-label");
-          this.visibilityTogglers.forEach(el => {
-            el.addEventListener("click", this);
-            el.addEventListener("keyup", this);
+        this.hideEls = (...els) => {
+          els.forEach(el => {
+            el.style.display = "none";
           });
+        };
+
+        if (!mozillaVpnInstalled) {
+          this.hideEls(this.currentServerButton, this.switch, this.switchInput);
+          this.hideShowButton.addEventListener("click", this);
+          this.hideShowButton.addEventListener("keyup", this);
 
           this.subtitle.textContent = "Protect this container with Mozilla VPN";
           this.primaryCta = this.querySelector(".mozilla-vpn-cta");
           this.primaryCta.addEventListener("click", this);
-          this.currentServerButton.style.display = "none";
-          this.switch.style.display = "none";
+          return;
         }
-        if (authenticatedMozVpnUser) {
-          this.primaryCta.style.display = "none";
-          this.hideShowButton.style.display = "none";
 
-          const getCurrentServer = async() => {
-            return await browser.storage.local.get("mozVpnCurrentServerInfo");
-          };
+        // App is installed...
+        this.hideEls(this.primaryCta, this.hideShowButton);
+        const { mozillaVpnAuthenticatedUser } = await browser.storage.local.get("mozillaVpnAuthenticatedUser");
+        const { mozillaVpnStatus } = await browser.storage.local.get("mozillaVpnStatus");
+        const { mozillaVpnCurrentServer } = await browser.storage.local.get("mozillaVpnCurrentServer");
 
-          getCurrentServer().then(value  => {
-            const { mozVpnCurrentServerInfo } = value;
-            this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = `url("./img/flags/${mozVpnCurrentServerInfo.countryCode.toUpperCase()}.png")`;
-            this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = mozVpnCurrentServerInfo.countryCode + ".png";
-            this.currentServerButton.querySelector(".current-city-name").textContent = mozVpnCurrentServerInfo.cityName;
+        this.switchInput.checked = mozillaVpnAuthenticatedUser && mozillaVpnStatus;
+        // TODO : Add switch listeners and update UI
+        // TODO : Check if container is using custom proxy, update UI
+
+        // TODO : User is not signed in.... ?
+
+        // TODO : Signed in user, VPN is off...?
+        if (!mozillaVpnAuthenticatedUser) {
+          this.classList.remove("expanded");
+          this.style.maxHeight = 48 + "px";
+          return;
+        }
+
+        if (!mozillaVpnCurrentServer || Object.keys(mozillaVpnCurrentServer).length === 0) {
+          this.currentServerButton.querySelector(".current-city-name").textContent = "Choose location";
+          return;
+        }
+
+        this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = `url("./img/flags/${mozillaVpnCurrentServer.countryCode.toUpperCase()}.png")`;
+        this.currentServerButton.querySelector(".current-country-flag").style.backgroundImage = mozillaVpnCurrentServer.countryCode + ".png";
+        this.currentServerButton.querySelector(".current-city-name").textContent = mozillaVpnCurrentServer.cityName;
+
+        if (!this.currentServerButton.classList.contains("has-attached-listeners")) {
+          this.currentServerButton.addEventListener("click", () => {
+            Logic.showPanel(P_MOZILLA_VPN_SERVER_LIST, identity);
           });
-
-          if (!this.currentServerButton.classList.contains("attached-events")) {
-            this.currentServerButton.addEventListener("click", () => {
-              Logic.showPanel(P_MOZILLA_VPN_SERVER_LIST, identity);
-            });
-            this.currentServerButton.classList.add("attached-events");
-          }
+          this.currentServerButton.classList.add("has-attached-listeners");
         }
       }
 
-      handleEvent(e) {
+      async handleEvent(e) {
         e.preventDefault();
         e.stopPropagation();
+
         this.classList.toggle("expanded");
+        if (!this.classList.contains("expanded")) {
+          await browser.storage.local.set({ "mozillaVpnHideUi": true });
+          return;
+        }
+        this.style.maxHeight = 1000 + "px";
+        await browser.storage.local.set({ "mozillaVpnHideUi": false });
       }
     }
 
@@ -1467,7 +1493,6 @@ Logic.registerPanel(P_CONTAINER_EDIT, {
       const mozUi = document.querySelector(".moz-vpn-controller-content");
       mozUi.connectedCallback();
     }
-
 
     // Add event listener to advanced proxy settings button
     const advancedProxySettingsButton = document.querySelector(".advanced-proxy-settings-btn");
@@ -1545,24 +1570,27 @@ Logic.registerPanel(P_MOZILLA_VPN_SERVER_LIST, {
     if (!returnToContainerEdit.classList.contains("has-attached-listeners")) {
       Utils.addEnterHandler(document.getElementById("moz-vpn-return"), async () => {
         const selectedServer = document.querySelector(".server-radio-btn:checked");
-  
-        await browser.storage.local.set({ "mozVpnCurrentServerInfo" : {
+
+        // TODO --------
+        await browser.storage.local.set({ "mozillaVpnCurrentServer" : {
           "countryCode": selectedServer.dataset.countryCode,
           "cityName": selectedServer.dataset.cityName
         } });
+        // ---------
         Logic.showPanel(P_CONTAINER_EDIT, identity);
       });
 
       returnToContainerEdit.classList.add("has-attached-listeners");
     }
 
-    const { mozVpnCurrentServerInfo } = await browser.storage.local.get("mozVpnCurrentServerInfo");
+    const { mozillaVpnCurrentServer } = await browser.storage.local.get("mozillaVpnCurrentServer");
 
     const { mozillaVpnServers } = await browser.storage.local.get("mozillaVpnServers");
 
     const listWrapper = document.getElementById("mozilla-vpn-server-list");
     const chooseLocationTitle = document.getElementById("vpn-server-list-title");
     const titleClassList = chooseLocationTitle.classList;
+
     listWrapper.onscroll = () => {
       const titleHasShadow = titleClassList.contains("drop-shadow");
       if (listWrapper.scrollTop < 48 && titleHasShadow) {
@@ -1573,18 +1601,17 @@ Logic.registerPanel(P_MOZILLA_VPN_SERVER_LIST, {
       }
     };
 
+    // Check if list has already been created, don't make again
     if (listWrapper.classList.contains("list-is-ready")) {
       document.querySelectorAll(".server-list-item").forEach(listItem => {
-        if (listItem.dataset.countryCode === mozVpnCurrentServerInfo.countryCode) {
+        if (listItem.dataset.countryCode === mozillaVpnCurrentServer.countryCode) {
+          // Expand current server country
           listItem.classList.add("expanded");
-
           listItem.querySelectorAll("input").forEach(radioBtn => {
-            if (radioBtn.dataset.cityName === mozVpnCurrentServerInfo.cityName) {
-              radioBtn.checked = true;
-            }
+            radioBtn.checked = radioBtn.dataset.cityName === mozillaVpnCurrentServer.cityName;
           });
         } else {
-
+          // Collapse previously expanded list items
           listItem.classList.remove("expanded");
           listItem.querySelector("ul").style.height = "0";
         }
@@ -1626,7 +1653,7 @@ Logic.registerPanel(P_MOZILLA_VPN_SERVER_LIST, {
         toggleCityListVisibility(listItem);
       });
 
-      if (mozVpnCurrentServerInfo.countryCode === serverCountry.code) {
+      if (mozillaVpnCurrentServer.countryCode === serverCountry.code) {
         toggleCityListVisibility(templateClone.querySelector(".server-list-item"));
       }
 
@@ -1652,7 +1679,7 @@ Logic.registerPanel(P_MOZILLA_VPN_SERVER_LIST, {
       listWrapper.appendChild(templateClone);
     });
 
-    const currentCityRadioBtn = document.querySelector(`[data-city-name='${mozVpnCurrentServerInfo.cityName}']`);
+    const currentCityRadioBtn = document.querySelector(`[data-city-name='${mozillaVpnCurrentServer.cityName}']`);
     currentCityRadioBtn.checked = true;
 
     listWrapper.classList.add("list-is-ready");

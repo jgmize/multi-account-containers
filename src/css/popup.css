@@ -495,6 +495,10 @@ input:checked + .slider:before {
   opacity: 0;
 }
 
+.expand-collapse {
+  width: 50%;
+}
+
 .blue-link {
   box-sizing: content-box;
 }
@@ -834,14 +838,13 @@ input[type=url] {
 .blue-link {
   align-items: center;
   background-color: transparent;
-  border-bottom: 1px solid var(--bgColor);
   border: none;
   color: var(--blue50);
   display: flex;
   height: 24px;
   line-height: 24px;
   position: relative;
-  transition: color 0.2s ease-in-out, border-bottom 0.2s ease-in-out;
+  transition: color 0.2s ease-in-out;
 }
 
 .blue-link,
@@ -856,7 +859,7 @@ input[type=url] {
 
 .blue-link:focus,
 .blue-link:focus .hide-show-label {
-  border-bottom: 1px solid var(--blue50);
+  text-decoration: underline;
   outline: none;
 }
 
